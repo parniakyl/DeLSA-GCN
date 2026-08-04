@@ -118,8 +118,6 @@ and ensemble weight is chosen on validation.
 │   ├── losses.py                  BCE, ASL, Focal, DBL, class-balanced weights
 │   ├── metrics.py                 accuracy, micro/macro-F1, P@k, nDCG@k
 │   ├── train_utils.py             shared train/eval loop, threshold search, EMA
-│   ├── reference_scores.py        published baseline numbers (reporting only)
-│   ├── plotting.py                figure fonts, Persian/CJK text, palette
 │   ├── console.py                 UTF-8 stdout (Windows code pages)
 │   └── models/
 │       ├── encoder_classifier.py  Phase 1  EncoderClassifier
@@ -133,9 +131,7 @@ and ensemble weight is chosen on validation.
 │   ├── 04_build_graph.py
 │   ├── 05_compute_node_features.py
 │   ├── 06_train_phase3.py
-│   ├── 07_multiseed_run.py
-│   ├── 08_make_figures.py         per-dataset figures
-│   └── 09_compare_datasets.py     cross-dataset comparison figures + tables
+│   └──  07_multiseed_run.py
 ├── tools/                         optional helpers, not part of the pipeline
 │   ├── check_gpu.py               is the GPU free? do the data + tokenizer load?
 │   ├── sanity_check.py            one forward pass end to end
@@ -287,155 +283,13 @@ python scripts/07_multiseed_run.py --config configs/aapd_phase2.yaml  --seeds 42
 
 ---
 
-## Figures
-
-Run after all three phases are trained.
-
-```bash
-# AAPD
-python3 scripts/08_make_figures.py \
-    --phase1-history outputs/aapd/phase1/results.json \
-    --phase2-history outputs/aapd/phase2/results.json \
-    --phase3-history outputs/aapd/phase3/results.json \
-    --phase2-config  configs/aapd_phase2.yaml \
-    --phase2-ckpt    outputs/aapd/phase2/best_model.pt \
-    --phase3-config  configs/aapd_phase3.yaml \
-    --phase3-ckpt    outputs/aapd/phase3/best_model.pt \
-    --output-dir     outputs/aapd/analysis
-
-# RMSC-V2
-python3 scripts/08_make_figures.py \
-    --phase1-history outputs/rmsc/phase1/results.json \
-    --phase2-history outputs/rmsc/phase2/results.json \
-    --phase3-history outputs/rmsc/phase3/results.json \
-    --phase2-config  configs/rmsc_phase2.yaml \
-    --phase2-ckpt    outputs/rmsc/phase2/best_model.pt \
-    --phase3-config  configs/rmsc_phase3.yaml \
-    --phase3-ckpt    outputs/rmsc/phase3/best_model.pt \
-    --output-dir     outputs/rmsc/analysis
-
-# PHATE
-python3 scripts/08_make_figures.py \
-    --phase1-history outputs/phate/phase1/results.json \
-    --phase2-history outputs/phate/phase2/results.json \
-    --phase3-history outputs/phate/phase3/results.json \
-    --phase2-config  configs/phate_phase2.yaml \
-    --phase2-ckpt    outputs/phate/phase2/best_model.pt \
-    --phase3-config  configs/phate_phase3.yaml \
-    --phase3-ckpt    outputs/phate/phase3/best_model.pt \
-    --output-dir     outputs/phate/analysis
-```
-
-Flags: `--skip-shap` (skip the slow attribution figure),
-`--with-calibration-top3`, `--bootstrap-samples N` (0 disables),
-`--per-doc-labels N`. Passing only the `--*-history` arguments produces just the
-training curves, with no inference.
-
-| Figure | What it shows |
-|---|---|
-| `phase{1,2,3}/` | loss + one PNG per metric, per phase |
-| `01_roc_curves` | ROC, micro/macro + top-10 labels |
-| `02_pr_curves` | precision-recall, micro/macro |
-| `03_calibration_average` | are the predicted probabilities calibrated? |
-| `05_confidence_distribution` | score histograms, correct vs incorrect |
-| `06_subgraph` | sparse doc→word→label subgraph with real IDF/PMI weights, plus node counts and dataset language |
-| `07_word_attribution` | gradient×input over tokens, for the top predicted labels |
-| `08_long_tail_analysis` | F1 vs label frequency |
-| `09_dumbbell_per_label` | Phase-2 vs Graph vs Ensemble, on three deliberately complementary labels |
-| `10_silhouette` | embedding cluster quality |
-| `11_tsne_raw_vs_ensemble` | raw label space vs ensemble predictions (2D + 3D) |
-| `12_radar_comparison` | radar vs published baselines, **raw** scores (never normalised) |
-| `13_label_correlation` | label co-occurrence heatmap |
-| `14_per_class_performance` | best/worst labels by F1 |
-| `15_threshold_optimization` | F1 vs decision threshold |
-| `16_label_set_size` | predicted vs true labels per document |
-| `17_qualitative_examples` | 3-column example cards, in the dataset's own script |
-| `18_label_confusion` | which label gets predicted when label *i* is missed |
-| `19_ablation` | inference-time component ablation, absolute scores + Δ vs full |
-| `20_bootstrap_ci` | 95% bootstrap CIs per model variant |
-| `21_method_comparison_bars` | grouped bars vs published baselines, raw scores |
-| `22_dumbbell_per_document/` | one file per label: Phase-2 vs Graph on individual documents, ★ = that model was correct |
-
-### Across datasets
-
-```bash
-python3 scripts/09_compare_datasets.py \
-    --result aapd=outputs/aapd/phase3/results.json \
-    --result rmsc=outputs/rmsc/phase3/results.json \
-    --result phate=outputs/phate/phase3/results.json \
-    --phase1 aapd=outputs/aapd/phase1/results.json \
-    --phase1 rmsc=outputs/rmsc/phase1/results.json \
-    --phase1 phate=outputs/phate/phase1/results.json \
-    --phase2 aapd=outputs/aapd/phase2/results.json \
-    --phase2 rmsc=outputs/rmsc/phase2/results.json \
-    --phase2 phate=outputs/phate/phase2/results.json \
-    --output-dir outputs/comparison
-```
-
-Produces `01_cross_dataset_bars.png` (ours vs baseline, per dataset),
-`02_gain_over_baseline.png` (Δ per dataset and metric),
-`03_phase_progression.png` (Phase 1 → 2 → 3 on each dataset), plus
-`comparison.md` / `.tex` / `.json`. `--result` also accepts a
-`07_multiseed_run.py` `*_aggregated.json`, in which case the bars get mean ± std
-error bars.
-
----
-
-## Adding a new dataset
-
-Say the new dataset is `reuters`, English, 90 labels.
-
-1. **Data** — write `data/reuters/{train,val,test}.tsv` in the format above.
-
-2. **Labels** — add an entry to [`src/labels.py`](src/labels.py):
-
-   ```python
-   REUTERS_LABELS = ["EARN", "ACQ", ...]        # order == bit order in the TSV
-   REUTERS_DESCRIPTIONS = {"EARN": "Corporate earnings reports: ...", ...}
-
-   DATASETS = {
-       ...,
-       "reuters": {
-           "labels": REUTERS_LABELS,
-           "descriptions": REUTERS_DESCRIPTIONS,
-           "num_labels": len(REUTERS_LABELS),
-           "language": "english",      # english | chinese | persian
-       },
-   }
-   ```
-
-   The assertion block at the bottom of that file fails loudly if any label is
-   missing a description. Descriptions are **model input**, not documentation:
-   write one or two clauses that separate each label from its nearest sibling.
-
-3. **Configs** — copy the three `aapd_*.yaml` files to `reuters_*.yaml` and edit
-   `dataset.*`, `model.encoder_name`, `model.language`, `train.save_dir`, and
-   `phase3.{graph_dir, features_dir, min_freq, window_size}`.
-
-4. **Baselines (optional)** — add a `"reuters"` entry to
-   [`src/reference_scores.py`](src/reference_scores.py) and name its headline
-   method in `PRIMARY_BASELINE`. Skip it and the comparison figures just omit
-   the baseline row.
-
-5. **New language?** — add a font candidate list to `_FONT_CANDIDATES` in
-   [`src/plotting.py`](src/plotting.py). `src/tokenization.py` already routes
-   any non-English language through the encoder's own WordPiece tokenizer,
-   which is the right default.
-
-Then run the same six pipeline commands with `--config configs/reuters_phase*.yaml`.
-Nothing else needs touching — the scripts read the dataset name from the config
-and look everything else up.
-
----
-
 ## Outputs
 
 Every training run writes to `train.save_dir`:
 
 | File            | Contents                                                       |
 |-----------------|----------------------------------------------------------------|
-| `best_model.pt` | checkpoint at the best validation micro-F1                     |
-| `last_model.pt` | final epoch (Phase 2 only)                                     |
+| `best_model.pt` | checkpoint at the best validation micro-F1                     |                                  |
 | `results.json`  | per-epoch history + final test metrics                         |
 | `config.yaml`   | the exact config that produced this run                        |
 
