@@ -1,7 +1,5 @@
 # DeLSA-GCN
-
-**De**BERTa-fused **L**abel-**S**emantic **A**ttention **G**raph **C**onvolutional **N**etwork
-for multi-label text classification.
+Label-Specific Attention and Relation-Aware Heterogeneous Graph for Multilingual Multi-label Text Classification
 
 Three datasets, one codebase:
 
