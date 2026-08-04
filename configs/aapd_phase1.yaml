@@ -1,0 +1,57 @@
+# AAPD — Phase 1 (encoder baseline)
+#
+# Target: beat S-GCN's micro-F1 of 73.28 and approach BERT-LiGCN's 75.89.
+#
+# Memory budget on an 8 GB RTX 3060 Ti (GPU otherwise idle):
+#   Model+grad+optim (AdamW, fp16+fp32 master):  ~3.0 GB
+#   Activations (batch=8, seq=256, grad ckpt):   ~0.5 GB
+#   Buffers + CUDA context:                      ~1.0 GB
+#   ------------------------------------------------------
+#   TOTAL ~4.5 GB, leaving ~3.5 GB headroom.
+# Run `python tools/check_gpu.py` first to confirm the GPU is free.
+#
+# Run: python scripts/01_train_phase1.py --config configs/aapd_phase1.yaml
+
+dataset:
+  name: aapd
+  num_labels: 54
+  train_path: data/aapd/aapd_train.tsv
+  val_path:   data/aapd/aapd_validation.tsv
+  test_path:  data/aapd/aapd_test.tsv
+  max_seq_len: 256                  # full AAPD abstract coverage
+
+model:
+  encoder_name: microsoft/deberta-v3-base
+  language: english                 # selects whitespace word tokenization in Phase 3
+  hidden_size: 768
+  dropout: 0.1
+  head: mean_pool_linear            # also how 07_multiseed_run.py detects the phase
+  freeze_layers: 0                  # train all layers
+
+loss:
+  name: bce
+  class_balanced: true              # helps long-tail macro/micro-F1
+  cb_beta: 0.999
+
+train:
+  seed: 42
+  epochs: 15
+  batch_size: 8
+  grad_accum_steps: 4               # effective batch = 32
+  eval_batch_size: 16
+  lr: 2.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  lr_scheduler: cosine
+  fp16: true
+  gradient_checkpointing: true
+  max_grad_norm: 1.0
+  optimizer: adamw                  # better than adafactor for fine-tuning
+  save_dir: outputs/aapd/phase1
+  save_best_metric: val_micro_f1
+  log_every: 100
+  eval_every_epoch: true
+
+eval:
+  threshold: 0.5
+  top_k: [1, 3, 5]

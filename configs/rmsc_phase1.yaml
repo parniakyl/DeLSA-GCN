@@ -1,0 +1,52 @@
+# RMSC-V2 — Phase 1 (Chinese encoder baseline)
+#
+# Uses hfl/chinese-roberta-wwm-ext instead of DeBERTa-v3: its WordPiece
+# vocabulary handles Chinese characters natively, whereas DeBERTa's byte-level
+# BPE shreds them.
+#
+# Run: python scripts/01_train_phase1.py --config configs/rmsc_phase1.yaml
+
+dataset:
+  name: rmsc
+  num_labels: 22
+  train_path: data/rmsc/train.tsv
+  val_path:   data/rmsc/val.tsv
+  test_path:  data/rmsc/test.tsv
+  max_seq_len: 384                  # music reviews are long
+
+model:
+  encoder_name: hfl/chinese-roberta-wwm-ext
+  language: chinese                 # -> WordPiece word tokenization in Phase 3
+  hidden_size: 768
+  dropout: 0.1
+  head: mean_pool_linear
+  freeze_layers: 0
+
+loss:
+  name: bce
+  class_balanced: true
+  cb_beta: 0.999
+
+train:
+  seed: 42
+  epochs: 15
+  batch_size: 4                     # seq_len 384 -> small physical batch
+  grad_accum_steps: 8               # effective batch = 32
+  eval_batch_size: 8
+  lr: 2.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  lr_scheduler: cosine
+  fp16: true
+  gradient_checkpointing: true
+  max_grad_norm: 1.0
+  optimizer: adamw
+  save_dir: outputs/rmsc/phase1
+  save_best_metric: val_micro_f1
+  log_every: 50
+  eval_every_epoch: true
+
+eval:
+  threshold: 0.5
+  top_k: [1, 3, 5]
+  adaptive_threshold: false         # RMSC labels are balanced enough for 0.5

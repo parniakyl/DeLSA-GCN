@@ -1,0 +1,37 @@
+# DeLSA-GCN dependencies.
+#
+# PyTorch is intentionally NOT pinned here: the right wheel depends on your CUDA
+# version. Install it first, from https://pytorch.org/get-started/locally/ , e.g.
+#   pip install torch --index-url https://download.pytorch.org/whl/cu118
+# then:
+#   pip install -r requirements.txt
+#
+# No torch-geometric needed — the Hetero-GCN uses plain torch.sparse.
+
+torch>=2.0
+transformers>=4.30
+sentencepiece>=0.1.99     # required by the DeBERTa-v3 tokenizer
+tokenizers>=0.13
+
+numpy>=1.23,<2.0
+scipy>=1.10
+scikit-learn>=1.2
+PyYAML>=6.0
+tqdm>=4.65
+
+# Figures — scripts/08_make_figures.py and scripts/09_compare_datasets.py
+matplotlib>=3.7
+seaborn>=0.12
+networkx>=3.0
+
+# Persian text in figures. Arabic script needs contextual letter shaping and
+# bidi reordering; without these, Persian renders as disconnected letters in
+# reverse order. Everything still runs, you just get a warning and ugly labels.
+arabic-reshaper>=3.0
+python-bidi>=0.4
+
+# Fonts are NOT pip-installable. Figures need a font covering the dataset's
+# script, picked automatically by src/plotting.py:
+#   Chinese  Microsoft YaHei / SimHei / Noto Sans CJK SC
+#   Persian  Vazirmatn / Tahoma / Noto Naskh Arabic
+# On Windows, YaHei and Tahoma ship with the OS, so nothing to do.

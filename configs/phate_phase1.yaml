@@ -1,0 +1,52 @@
+# PHATE (Persian hate speech) — Phase 1 (Persian encoder baseline)
+#
+# Uses HooshvareLab/roberta-fa-zwnj-base: its tokenizer handles Persian and the
+# ZWNJ (U+200C) joiner correctly, which byte-level BPE does not.
+# 4 labels: Violenc, Hate, Vulgar, HateSpeech.
+#
+# Run: python scripts/01_train_phase1.py --config configs/phate_phase1.yaml
+
+dataset:
+  name: phate
+  num_labels: 4
+  train_path: data/phate/train.tsv
+  val_path:   data/phate/val.tsv
+  test_path:  data/phate/test.tsv
+  max_seq_len: 128                  # Persian tweets/short texts
+
+model:
+  encoder_name: HooshvareLab/roberta-fa-zwnj-base
+  language: persian                 # -> WordPiece word tokenization in Phase 3
+  hidden_size: 768
+  dropout: 0.1
+  head: mean_pool_linear
+  freeze_layers: 0
+
+loss:
+  name: bce
+  class_balanced: true              # hate-speech datasets are imbalanced
+  cb_beta: 0.999
+
+train:
+  seed: 42
+  epochs: 15
+  batch_size: 16                    # short text -> larger batch fits
+  grad_accum_steps: 2               # effective batch = 32
+  eval_batch_size: 32
+  lr: 2.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  lr_scheduler: cosine
+  fp16: true
+  gradient_checkpointing: false     # short sequences, not needed
+  max_grad_norm: 1.0
+  optimizer: adamw
+  save_dir: outputs/phate/phase1
+  save_best_metric: val_micro_f1
+  log_every: 50
+  eval_every_epoch: true
+
+eval:
+  threshold: 0.5
+  top_k: [1, 3, 5]
+  adaptive_threshold: false         # only 4 labels, reasonably balanced
