@@ -299,20 +299,6 @@ comes from the best-on-validation checkpoint.
 
 ---
 
-## Troubleshooting
-
-| Symptom | Try |
-|---|---|
-| CUDA out of memory | lower `train.batch_size` (raise `grad_accum_steps` to keep the effective batch), lower `dataset.max_seq_len`, or set `train.gradient_checkpointing: true` |
-| Phase 3 OOM | lower `phase3.hidden_dim` (512 → 256), or raise `phase3.min_freq` to shrink the vocabulary |
-| micro-F1 stuck at 0 | expected on very sparse label sets — `eval.adaptive_threshold: true` refits the threshold on validation. Confirm with `tools/diagnose_collapse.py` |
-| Loss goes NaN | training aborts the epoch by design. Inspect with `tools/debug_first_steps.py` |
-| `label_emb_init shape mismatch` | `02_encode_labels.py` was run with a different encoder or dataset than the phase-2 config |
-| Persian text is disconnected / reversed in figures | `pip install arabic-reshaper python-bidi` |
-| Chinese/Persian text shows as boxes | no font covering that script is installed — see `_FONT_CANDIDATES` in `src/plotting.py` |
-| Old Phase-3 checkpoint won't load | it will — `GraphClassifier.load_state_dict` remaps pre-rename `hetero_gat.*` keys automatically |
-| Garbled / crashing console output | `src/console.py` forces UTF-8; if it still breaks, run `chcp 65001` first on Windows |
-| Word count differs between graph and node features | both steps must use the same `model.language`; rerun `04_build_graph.py` and `05_compute_node_features.py` with the same config |
 
 ---
 
