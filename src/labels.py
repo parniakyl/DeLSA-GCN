@@ -202,7 +202,7 @@ PHATE_DESCRIPTIONS = {
     "Violenc":    "Violence خشونت: content that threatens, incites, or glorifies physical violence against a person or group.",
     "Hate":       "Hate نفرت: general hateful or hostile sentiment/insults directed at a person or group, without necessarily meeting the formal criteria of targeted hate speech below.",
     "Vulgar":     "Vulgar Language سخنان زشت: crude, obscene or profane language that is offensive in tone but not necessarily hateful or targeted at a protected group.",
-    "HateSpeech": "Hate Speech محتوای نفرت‌پراکنی: explicit hate speech targeting a group's protected characteristics (e.g. ethnicity, religion, gender, nationality), the most severe/formal category, distinct from the broader 'Hate' label.",
+    "HateSpeech": "Hate Speech محتوای نفرت‌پراکنی: umbrella label: positive whenever Violence, Hate or Vulgar is present",
 }
 
 
